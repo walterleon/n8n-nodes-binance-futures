@@ -12,8 +12,8 @@ const resourceExecutors: Record<
   Record<string, (ctx: IExecuteFunctions, index: number) => Promise<INodeExecutionData[]>>
 > = {
   order,
-  position,
-  account,
+  position: position as any,
+  account: account as any,
   wallet,
   marketData: marketData as any,
 };
