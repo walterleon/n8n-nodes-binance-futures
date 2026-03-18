@@ -4,6 +4,10 @@ import { binanceRequest } from '../../helpers/binanceRequest';
 
 const ALGO_ORDER_TYPES = ['STOP', 'STOP_MARKET', 'TAKE_PROFIT', 'TAKE_PROFIT_MARKET', 'TRAILING_STOP_MARKET'];
 
+function toFixed6(value: number | string): string {
+	return Number(value).toFixed(6);
+}
+
 export async function placeOrder(
 	ctx: IExecuteFunctions,
 	index: number,
@@ -26,13 +30,13 @@ export async function placeOrder(
 			type: orderType,
 			positionSide: 'BOTH',
 			newOrderRespType: 'RESULT',
-			quantity: String(quantity),
+			quantity: toFixed6(quantity),
 		};
 
 		// Price — only for STOP, TAKE_PROFIT
 		if (['STOP', 'TAKE_PROFIT'].includes(orderType)) {
 			const price = ctx.getNodeParameter('price', index) as number;
-			if (price) algoParams.price = String(price);
+			if (price) algoParams.price = toFixed6(price);
 			const timeInForce = ctx.getNodeParameter('timeInForce', index) as string;
 			if (timeInForce) algoParams.timeInForce = timeInForce;
 		}
@@ -40,13 +44,13 @@ export async function placeOrder(
 		// triggerPrice (was stopPrice) — for STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET
 		if (['STOP', 'STOP_MARKET', 'TAKE_PROFIT', 'TAKE_PROFIT_MARKET'].includes(orderType)) {
 			const stopPrice = ctx.getNodeParameter('stopPrice', index) as number;
-			if (stopPrice) algoParams.triggerPrice = String(stopPrice);
+			if (stopPrice) algoParams.triggerPrice = toFixed6(stopPrice);
 		}
 
 		// callbackRate — only for TRAILING_STOP_MARKET
 		if (orderType === 'TRAILING_STOP_MARKET') {
 			const callbackRate = ctx.getNodeParameter('callbackRate', index) as number;
-			if (callbackRate) algoParams.callbackRate = String(callbackRate);
+			if (callbackRate) algoParams.callbackRate = toFixed6(callbackRate);
 		}
 
 		// workingType — for all algo order types
@@ -73,7 +77,7 @@ export async function placeOrder(
 			symbol,
 			side,
 			type: orderType,
-			quantity: String(quantity),
+			quantity: toFixed6(quantity),
 			positionSide: 'BOTH',
 			newOrderRespType: 'RESULT',
 		};
@@ -81,7 +85,7 @@ export async function placeOrder(
 		// Price — only for LIMIT
 		if (orderType === 'LIMIT') {
 			const price = ctx.getNodeParameter('price', index) as number;
-			params.price = String(price);
+			params.price = toFixed6(price);
 		}
 
 		// Time in Force — only for LIMIT

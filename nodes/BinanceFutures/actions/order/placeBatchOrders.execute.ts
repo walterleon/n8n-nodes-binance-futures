@@ -4,6 +4,10 @@ import { binanceRequest } from '../../helpers/binanceRequest';
 
 const ALGO_ORDER_TYPES = ['STOP', 'STOP_MARKET', 'TAKE_PROFIT', 'TAKE_PROFIT_MARKET', 'TRAILING_STOP_MARKET'];
 
+function toFixed6(value: number | string): string {
+	return Number(value).toFixed(6);
+}
+
 export async function placeBatchOrders(
 	ctx: IExecuteFunctions,
 	index: number,
@@ -36,14 +40,14 @@ export async function placeBatchOrders(
 				symbol: o.symbol,
 				side: o.side,
 				type: o.type,
-				quantity: String(o.quantity),
+				quantity: toFixed6(o.quantity),
 				positionSide: 'BOTH',
 				newOrderRespType: 'RESULT',
 			};
 
 			// Price — only for LIMIT
 			if (o.type === 'LIMIT' && o.price) {
-				order.price = String(o.price);
+				order.price = toFixed6(o.price);
 			}
 
 			// Time in Force — only for LIMIT
@@ -81,12 +85,12 @@ export async function placeBatchOrders(
 			type: o.type,
 			positionSide: 'BOTH',
 			newOrderRespType: 'RESULT',
-			quantity: String(o.quantity),
+			quantity: toFixed6(o.quantity),
 		};
 
 		// Price — only for STOP, TAKE_PROFIT
 		if (['STOP', 'TAKE_PROFIT'].includes(o.type) && o.price) {
-			algoParams.price = String(o.price);
+			algoParams.price = toFixed6(o.price);
 		}
 
 		// Time in Force — only for STOP, TAKE_PROFIT
@@ -96,7 +100,7 @@ export async function placeBatchOrders(
 
 		// triggerPrice (was stopPrice) — for STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET
 		if (['STOP', 'STOP_MARKET', 'TAKE_PROFIT', 'TAKE_PROFIT_MARKET'].includes(o.type) && o.stopPrice) {
-			algoParams.triggerPrice = String(o.stopPrice);
+			algoParams.triggerPrice = toFixed6(o.stopPrice);
 		}
 
 		// Reduce Only — only include if true
