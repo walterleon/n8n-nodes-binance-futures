@@ -2,6 +2,8 @@ import { IExecuteFunctions } from 'n8n-core';
 import { IDataObject, INodeExecutionData } from 'n8n-workflow';
 import { binanceRequest } from '../../helpers/binanceRequest';
 
+const ALGO_ORDER_TYPES = ['STOP', 'STOP_MARKET', 'TAKE_PROFIT', 'TAKE_PROFIT_MARKET', 'TRAILING_STOP_MARKET'];
+
 export async function placeOrder(
 	ctx: IExecuteFunctions,
 	index: number,
@@ -13,61 +15,98 @@ export async function placeOrder(
 	const reduceOnly = ctx.getNodeParameter('reduceOnly', index) as boolean;
 	const clientOrderId = ctx.getNodeParameter('clientOrderId', index, '') as string;
 
-	const params: Record<string, string | number | boolean | undefined> = {
-		symbol,
-		side,
-		type: orderType,
-		quantity: String(quantity),
-		positionSide: 'BOTH',
-		newOrderRespType: 'RESULT',
-	};
+	const isAlgoOrder = ALGO_ORDER_TYPES.includes(orderType);
 
-	// Price — only for LIMIT, STOP, TAKE_PROFIT
-	if (['LIMIT', 'STOP', 'TAKE_PROFIT'].includes(orderType)) {
-		const price = ctx.getNodeParameter('price', index) as number;
-		params.price = String(price);
-	}
+	if (isAlgoOrder) {
+		// Route conditional order types to Algo Order endpoint
+		const algoParams: Record<string, string | number | boolean | undefined> = {
+			algoType: 'CONDITIONAL',
+			symbol,
+			side,
+			type: orderType,
+			positionSide: 'BOTH',
+			newOrderRespType: 'RESULT',
+			quantity: String(quantity),
+		};
 
-	// Stop Price — only for STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET
-	if (['STOP', 'STOP_MARKET', 'TAKE_PROFIT', 'TAKE_PROFIT_MARKET'].includes(orderType)) {
-		const stopPrice = ctx.getNodeParameter('stopPrice', index) as number;
-		params.stopPrice = String(stopPrice);
-	}
+		// Price — only for STOP, TAKE_PROFIT
+		if (['STOP', 'TAKE_PROFIT'].includes(orderType)) {
+			const price = ctx.getNodeParameter('price', index) as number;
+			if (price) algoParams.price = String(price);
+			const timeInForce = ctx.getNodeParameter('timeInForce', index) as string;
+			if (timeInForce) algoParams.timeInForce = timeInForce;
+		}
 
-	// Callback Rate — only for TRAILING_STOP_MARKET
-	if (orderType === 'TRAILING_STOP_MARKET') {
-		const callbackRate = ctx.getNodeParameter('callbackRate', index) as number;
-		params.callbackRate = String(callbackRate);
-	}
+		// triggerPrice (was stopPrice) — for STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET
+		if (['STOP', 'STOP_MARKET', 'TAKE_PROFIT', 'TAKE_PROFIT_MARKET'].includes(orderType)) {
+			const stopPrice = ctx.getNodeParameter('stopPrice', index) as number;
+			if (stopPrice) algoParams.triggerPrice = String(stopPrice);
+		}
 
-	// Time in Force — only for LIMIT, STOP, TAKE_PROFIT
-	if (['LIMIT', 'STOP', 'TAKE_PROFIT'].includes(orderType)) {
-		const timeInForce = ctx.getNodeParameter('timeInForce', index) as string;
-		params.timeInForce = timeInForce;
-	}
+		// callbackRate — only for TRAILING_STOP_MARKET
+		if (orderType === 'TRAILING_STOP_MARKET') {
+			const callbackRate = ctx.getNodeParameter('callbackRate', index) as number;
+			if (callbackRate) algoParams.callbackRate = String(callbackRate);
+		}
 
-	// Working Type — only for STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET, TRAILING_STOP_MARKET
-	if (['STOP', 'STOP_MARKET', 'TAKE_PROFIT', 'TAKE_PROFIT_MARKET', 'TRAILING_STOP_MARKET'].includes(orderType)) {
+		// workingType — for all algo order types
 		const workingType = ctx.getNodeParameter('workingType', index) as string;
-		params.workingType = workingType;
+		if (workingType) algoParams.workingType = workingType;
+
+		// Reduce Only — only include if true
+		if (reduceOnly) algoParams.reduceOnly = 'true';
+
+		// Client Algo ID — uses clientAlgoId instead of newClientOrderId
+		if (clientOrderId) algoParams.clientAlgoId = clientOrderId;
+
+		const response = await binanceRequest.call(ctx, {
+			method: 'POST',
+			path: '/fapi/v1/algoOrder',
+			signed: true,
+			params: algoParams,
+		});
+
+		return ctx.helpers.returnJsonArray([response as IDataObject]);
+	} else {
+		// Regular order types (MARKET, LIMIT) — use standard order endpoint
+		const params: Record<string, string | number | boolean | undefined> = {
+			symbol,
+			side,
+			type: orderType,
+			quantity: String(quantity),
+			positionSide: 'BOTH',
+			newOrderRespType: 'RESULT',
+		};
+
+		// Price — only for LIMIT
+		if (orderType === 'LIMIT') {
+			const price = ctx.getNodeParameter('price', index) as number;
+			params.price = String(price);
+		}
+
+		// Time in Force — only for LIMIT
+		if (orderType === 'LIMIT') {
+			const timeInForce = ctx.getNodeParameter('timeInForce', index) as string;
+			params.timeInForce = timeInForce;
+		}
+
+		// Reduce Only — only include if true
+		if (reduceOnly) {
+			params.reduceOnly = 'true';
+		}
+
+		// Client Order ID — only include if non-empty
+		if (clientOrderId) {
+			params.newClientOrderId = clientOrderId;
+		}
+
+		const response = await binanceRequest.call(ctx, {
+			method: 'POST',
+			path: '/fapi/v1/order',
+			signed: true,
+			params,
+		});
+
+		return ctx.helpers.returnJsonArray([response as IDataObject]);
 	}
-
-	// Reduce Only — only include if true
-	if (reduceOnly) {
-		params.reduceOnly = 'true';
-	}
-
-	// Client Order ID — only include if non-empty
-	if (clientOrderId) {
-		params.newClientOrderId = clientOrderId;
-	}
-
-	const response = await binanceRequest.call(ctx, {
-		method: 'POST',
-		path: '/fapi/v1/order',
-		signed: true,
-		params,
-	});
-
-	return ctx.helpers.returnJsonArray([response as IDataObject]);
 }

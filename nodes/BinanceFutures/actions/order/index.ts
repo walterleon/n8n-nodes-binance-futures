@@ -6,6 +6,9 @@ export { cancelAllOrders } from './cancelAllOrders.execute';
 export { getOrder } from './getOrder.execute';
 export { getOpenOrders } from './getOpenOrders.execute';
 export { getAllOrders } from './getAllOrders.execute';
+export { cancelAlgoOrder } from './cancelAlgoOrder.execute';
+export { getAlgoOrder } from './getAlgoOrder.execute';
+export { getOpenAlgoOrders } from './getOpenAlgoOrders.execute';
 
 import { placeOrderProperties } from './placeOrder.properties';
 import { placeBatchOrdersProperties } from './placeBatchOrders.properties';
@@ -15,6 +18,9 @@ import { cancelAllOrdersProperties } from './cancelAllOrders.properties';
 import { getOrderProperties } from './getOrder.properties';
 import { getOpenOrdersProperties } from './getOpenOrders.properties';
 import { getAllOrdersProperties } from './getAllOrders.properties';
+import { cancelAlgoOrderProperties } from './cancelAlgoOrder.properties';
+import { getAlgoOrderProperties } from './getAlgoOrder.properties';
+import { getOpenAlgoOrdersProperties } from './getOpenAlgoOrders.properties';
 
 export const orderProperties = [
 	...placeOrderProperties,
@@ -25,4 +31,7 @@ export const orderProperties = [
 	...getOrderProperties,
 	...getOpenOrdersProperties,
 	...getAllOrdersProperties,
+	...cancelAlgoOrderProperties,
+	...getAlgoOrderProperties,
+	...getOpenAlgoOrdersProperties,
 ];

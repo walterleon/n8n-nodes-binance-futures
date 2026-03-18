@@ -30,6 +30,9 @@ export const orderOperationProperty: INodeProperties = {
     { name: 'Get Order', value: 'getOrder', action: 'Get an order' },
     { name: 'Get Open Orders', value: 'getOpenOrders', action: 'Get open orders' },
     { name: 'Get All Orders', value: 'getAllOrders', action: 'Get all orders history' },
+    { name: 'Cancel Algo Order', value: 'cancelAlgoOrder', action: 'Cancel a conditional algo order' },
+    { name: 'Get Algo Order', value: 'getAlgoOrder', action: 'Get a conditional algo order status' },
+    { name: 'Get Open Algo Orders', value: 'getOpenAlgoOrders', action: 'Get all open conditional algo orders' },
   ],
   default: 'placeOrder',
 };
