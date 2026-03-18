@@ -13,6 +13,28 @@ import {
 
 type ContextFunctions = IExecuteFunctions | ILoadOptionsFunctions | ITriggerFunctions;
 
+export interface SymbolPrecision {
+  tickSize: string;
+  stepSize: string;
+  pricePrecision: number;
+  quantityPrecision: number;
+}
+
+function countDecimals(stepStr: string): number {
+  // e.g. "0.0001" → 4, "1" → 0, "0.10" → 1
+  const trimmed = stepStr.replace(/0+$/, '');
+  const dot = trimmed.indexOf('.');
+  if (dot === -1) return 0;
+  return trimmed.length - dot - 1;
+}
+
+export function roundToStep(value: number, stepSize: string): string {
+  const decimals = countDecimals(stepSize);
+  const step = parseFloat(stepSize);
+  const rounded = Math.floor(value / step) * step;
+  return rounded.toFixed(decimals);
+}
+
 function getBaseUrl(
   credentials: BinanceCredentials,
   baseUrlType: 'fapi' | 'sapi',
@@ -119,4 +141,43 @@ export async function binanceRequest(
 
     throw new NodeApiError(this.getNode(), error as any);
   }
+}
+
+const precisionCache = new Map<string, SymbolPrecision>();
+
+export async function getSymbolPrecision(
+  this: ContextFunctions,
+  symbol: string,
+): Promise<SymbolPrecision> {
+  if (precisionCache.has(symbol)) {
+    return precisionCache.get(symbol)!;
+  }
+
+  const info = await binanceRequest.call(this, {
+    method: 'GET',
+    path: '/fapi/v1/exchangeInfo',
+    signed: false,
+    params: {},
+  });
+
+  for (const s of info.symbols || []) {
+    let tickSize = '0.00000100';
+    let stepSize = '1';
+    for (const f of s.filters || []) {
+      if (f.filterType === 'PRICE_FILTER') tickSize = f.tickSize;
+      if (f.filterType === 'LOT_SIZE') stepSize = f.stepSize;
+    }
+    precisionCache.set(s.symbol, {
+      tickSize,
+      stepSize,
+      pricePrecision: s.pricePrecision || 6,
+      quantityPrecision: s.quantityPrecision || 3,
+    });
+  }
+
+  if (precisionCache.has(symbol)) {
+    return precisionCache.get(symbol)!;
+  }
+
+  return { tickSize: '0.00000100', stepSize: '0.001', pricePrecision: 6, quantityPrecision: 3 };
 }

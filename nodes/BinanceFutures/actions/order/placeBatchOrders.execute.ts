@@ -1,12 +1,8 @@
 import { IExecuteFunctions } from 'n8n-core';
 import { INodeExecutionData } from 'n8n-workflow';
-import { binanceRequest } from '../../helpers/binanceRequest';
+import { binanceRequest, getSymbolPrecision, roundToStep } from '../../helpers/binanceRequest';
 
 const ALGO_ORDER_TYPES = ['STOP', 'STOP_MARKET', 'TAKE_PROFIT', 'TAKE_PROFIT_MARKET', 'TRAILING_STOP_MARKET'];
-
-function toFixed6(value: number | string): string {
-	return Number(value).toFixed(6);
-}
 
 export async function placeBatchOrders(
 	ctx: IExecuteFunctions,
@@ -35,19 +31,20 @@ export async function placeBatchOrders(
 
 	// Process regular orders via batch endpoint
 	if (regularOrders.length > 0) {
-		const batchOrders = regularOrders.map((o) => {
+		const batchOrders = await Promise.all(regularOrders.map(async (o) => {
+			const precision = await getSymbolPrecision.call(ctx, o.symbol);
 			const order: Record<string, string | boolean> = {
 				symbol: o.symbol,
 				side: o.side,
 				type: o.type,
-				quantity: toFixed6(o.quantity),
+				quantity: roundToStep(o.quantity, precision.stepSize),
 				positionSide: 'BOTH',
 				newOrderRespType: 'RESULT',
 			};
 
 			// Price — only for LIMIT
 			if (o.type === 'LIMIT' && o.price) {
-				order.price = toFixed6(o.price);
+				order.price = roundToStep(o.price, precision.tickSize);
 			}
 
 			// Time in Force — only for LIMIT
@@ -61,7 +58,7 @@ export async function placeBatchOrders(
 			}
 
 			return order;
-		});
+		}));
 
 		const response = await binanceRequest.call(ctx, {
 			method: 'POST',
@@ -78,6 +75,7 @@ export async function placeBatchOrders(
 
 	// Process algo orders individually via algo order endpoint
 	for (const o of algoOrders) {
+		const precision = await getSymbolPrecision.call(ctx, o.symbol);
 		const algoParams: Record<string, string | number | boolean | undefined> = {
 			algoType: 'CONDITIONAL',
 			symbol: o.symbol,
@@ -85,12 +83,12 @@ export async function placeBatchOrders(
 			type: o.type,
 			positionSide: 'BOTH',
 			newOrderRespType: 'RESULT',
-			quantity: toFixed6(o.quantity),
+			quantity: roundToStep(o.quantity, precision.stepSize),
 		};
 
 		// Price — only for STOP, TAKE_PROFIT
 		if (['STOP', 'TAKE_PROFIT'].includes(o.type) && o.price) {
-			algoParams.price = toFixed6(o.price);
+			algoParams.price = roundToStep(o.price, precision.tickSize);
 		}
 
 		// Time in Force — only for STOP, TAKE_PROFIT
@@ -100,7 +98,7 @@ export async function placeBatchOrders(
 
 		// triggerPrice (was stopPrice) — for STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET
 		if (['STOP', 'STOP_MARKET', 'TAKE_PROFIT', 'TAKE_PROFIT_MARKET'].includes(o.type) && o.stopPrice) {
-			algoParams.triggerPrice = toFixed6(o.stopPrice);
+			algoParams.triggerPrice = roundToStep(o.stopPrice, precision.tickSize);
 		}
 
 		// Reduce Only — only include if true

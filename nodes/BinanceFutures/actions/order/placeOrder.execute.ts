@@ -1,12 +1,8 @@
 import { IExecuteFunctions } from 'n8n-core';
 import { IDataObject, INodeExecutionData } from 'n8n-workflow';
-import { binanceRequest } from '../../helpers/binanceRequest';
+import { binanceRequest, getSymbolPrecision, roundToStep } from '../../helpers/binanceRequest';
 
 const ALGO_ORDER_TYPES = ['STOP', 'STOP_MARKET', 'TAKE_PROFIT', 'TAKE_PROFIT_MARKET', 'TRAILING_STOP_MARKET'];
-
-function toFixed6(value: number | string): string {
-	return Number(value).toFixed(6);
-}
 
 export async function placeOrder(
 	ctx: IExecuteFunctions,
@@ -19,6 +15,10 @@ export async function placeOrder(
 	const reduceOnly = ctx.getNodeParameter('reduceOnly', index) as boolean;
 	const clientOrderId = ctx.getNodeParameter('clientOrderId', index, '') as string;
 
+	// Get symbol precision from exchangeInfo
+	const precision = await getSymbolPrecision.call(ctx, symbol);
+	const qty = roundToStep(quantity, precision.stepSize);
+
 	const isAlgoOrder = ALGO_ORDER_TYPES.includes(orderType);
 
 	if (isAlgoOrder) {
@@ -30,13 +30,13 @@ export async function placeOrder(
 			type: orderType,
 			positionSide: 'BOTH',
 			newOrderRespType: 'RESULT',
-			quantity: toFixed6(quantity),
+			quantity: qty,
 		};
 
 		// Price — only for STOP, TAKE_PROFIT
 		if (['STOP', 'TAKE_PROFIT'].includes(orderType)) {
 			const price = ctx.getNodeParameter('price', index) as number;
-			if (price) algoParams.price = toFixed6(price);
+			if (price) algoParams.price = roundToStep(price, precision.tickSize);
 			const timeInForce = ctx.getNodeParameter('timeInForce', index) as string;
 			if (timeInForce) algoParams.timeInForce = timeInForce;
 		}
@@ -44,13 +44,13 @@ export async function placeOrder(
 		// triggerPrice (was stopPrice) — for STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET
 		if (['STOP', 'STOP_MARKET', 'TAKE_PROFIT', 'TAKE_PROFIT_MARKET'].includes(orderType)) {
 			const stopPrice = ctx.getNodeParameter('stopPrice', index) as number;
-			if (stopPrice) algoParams.triggerPrice = toFixed6(stopPrice);
+			if (stopPrice) algoParams.triggerPrice = roundToStep(stopPrice, precision.tickSize);
 		}
 
-		// callbackRate — only for TRAILING_STOP_MARKET
+		// callbackRate — only for TRAILING_STOP_MARKET (0.1-10, not price-based)
 		if (orderType === 'TRAILING_STOP_MARKET') {
 			const callbackRate = ctx.getNodeParameter('callbackRate', index) as number;
-			if (callbackRate) algoParams.callbackRate = toFixed6(callbackRate);
+			if (callbackRate) algoParams.callbackRate = String(callbackRate);
 		}
 
 		// workingType — for all algo order types
@@ -77,7 +77,7 @@ export async function placeOrder(
 			symbol,
 			side,
 			type: orderType,
-			quantity: toFixed6(quantity),
+			quantity: qty,
 			positionSide: 'BOTH',
 			newOrderRespType: 'RESULT',
 		};
@@ -85,7 +85,7 @@ export async function placeOrder(
 		// Price — only for LIMIT
 		if (orderType === 'LIMIT') {
 			const price = ctx.getNodeParameter('price', index) as number;
-			params.price = toFixed6(price);
+			params.price = roundToStep(price, precision.tickSize);
 		}
 
 		// Time in Force — only for LIMIT
