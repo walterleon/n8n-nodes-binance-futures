@@ -13,6 +13,12 @@ import {
   marketDataOperationProperty,
 } from './actions/resources';
 
+import { orderProperties } from './actions/order';
+import { positionProperties } from './actions/position';
+import { accountProperties } from './actions/account';
+import { walletProperties } from './actions/wallet';
+import { marketDataProperties } from './actions/marketData';
+
 export class BinanceFutures implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Binance Futures',
@@ -34,6 +40,11 @@ export class BinanceFutures implements INodeType {
       accountOperationProperty,
       walletOperationProperty,
       marketDataOperationProperty,
+      ...orderProperties,
+      ...positionProperties,
+      ...accountProperties,
+      ...walletProperties,
+      ...marketDataProperties,
     ],
   };
 

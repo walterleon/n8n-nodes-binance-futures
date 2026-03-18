@@ -1,5 +1,6 @@
 import { ITriggerFunctions } from 'n8n-core';
 import { ITriggerResponse, NodeApiError } from 'n8n-workflow';
+import WebSocket from 'ws';
 import {
   BASE_URLS,
   BinanceCredentials,
