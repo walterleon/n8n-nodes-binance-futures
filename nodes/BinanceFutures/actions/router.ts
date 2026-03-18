@@ -14,7 +14,7 @@ const resourceExecutors: Record<
   order: order as any,
   position: position as any,
   account: account as any,
-  wallet,
+  wallet: wallet as any,
   marketData: marketData as any,
 };
 
