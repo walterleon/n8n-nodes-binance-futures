@@ -15,7 +15,7 @@ const resourceExecutors: Record<
   position,
   account,
   wallet,
-  marketData,
+  marketData: marketData as any,
 };
 
 export async function router(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
