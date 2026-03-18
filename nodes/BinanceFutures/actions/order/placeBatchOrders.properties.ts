@@ -1,0 +1,101 @@
+import { INodeProperties } from 'n8n-workflow';
+
+export const placeBatchOrdersProperties: INodeProperties[] = [
+	{
+		displayName: 'Orders',
+		name: 'orders',
+		type: 'fixedCollection',
+		displayOptions: { show: { resource: ['order'], operation: ['placeBatchOrders'] } },
+		typeOptions: { multipleValues: true, maxValue: 5 },
+		default: {},
+		description: 'Orders to place (max 5)',
+		options: [
+			{
+				displayName: 'Order',
+				name: 'order',
+				values: [
+					{
+						displayName: 'Symbol',
+						name: 'symbol',
+						type: 'string',
+						default: '',
+						required: true,
+						description: 'Trading pair symbol (e.g. BTCUSDT)',
+					},
+					{
+						displayName: 'Side',
+						name: 'side',
+						type: 'options',
+						options: [
+							{ name: 'Buy', value: 'BUY' },
+							{ name: 'Sell', value: 'SELL' },
+						],
+						default: 'BUY',
+						description: 'Order side',
+					},
+					{
+						displayName: 'Type',
+						name: 'type',
+						type: 'options',
+						options: [
+							{ name: 'Market', value: 'MARKET' },
+							{ name: 'Limit', value: 'LIMIT' },
+							{ name: 'Stop', value: 'STOP' },
+							{ name: 'Stop Market', value: 'STOP_MARKET' },
+							{ name: 'Take Profit', value: 'TAKE_PROFIT' },
+							{ name: 'Take Profit Market', value: 'TAKE_PROFIT_MARKET' },
+							{ name: 'Trailing Stop Market', value: 'TRAILING_STOP_MARKET' },
+						],
+						default: 'MARKET',
+						description: 'Order type',
+					},
+					{
+						displayName: 'Quantity',
+						name: 'quantity',
+						type: 'number',
+						default: 0,
+						required: true,
+						typeOptions: { numberPrecision: 8 },
+						description: 'Order quantity',
+					},
+					{
+						displayName: 'Price',
+						name: 'price',
+						type: 'number',
+						default: 0,
+						typeOptions: { numberPrecision: 8 },
+						description: 'Order price (required for LIMIT, STOP, TAKE_PROFIT)',
+					},
+					{
+						displayName: 'Stop Price',
+						name: 'stopPrice',
+						type: 'number',
+						default: 0,
+						typeOptions: { numberPrecision: 8 },
+						description: 'Stop price (required for STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET)',
+					},
+					{
+						displayName: 'Time in Force',
+						name: 'timeInForce',
+						type: 'options',
+						options: [
+							{ name: 'GTC', value: 'GTC' },
+							{ name: 'IOC', value: 'IOC' },
+							{ name: 'FOK', value: 'FOK' },
+							{ name: 'GTX Post Only', value: 'GTX' },
+						],
+						default: 'GTC',
+						description: 'Time in force (required for LIMIT, STOP, TAKE_PROFIT)',
+					},
+					{
+						displayName: 'Reduce Only',
+						name: 'reduceOnly',
+						type: 'boolean',
+						default: false,
+						description: 'Whether the order is reduce only',
+					},
+				],
+			},
+		],
+	},
+];

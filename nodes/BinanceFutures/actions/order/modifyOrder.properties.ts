@@ -1,0 +1,57 @@
+import { INodeProperties } from 'n8n-workflow';
+
+export const modifyOrderProperties: INodeProperties[] = [
+	{
+		displayName: 'Symbol Name or ID',
+		name: 'symbol',
+		type: 'options',
+		required: true,
+		description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code-examples/expressions/">expression</a>',
+		displayOptions: { show: { resource: ['order'], operation: ['modifyOrder'] } },
+		typeOptions: { loadOptionsMethod: 'getSymbols' },
+		options: [],
+		default: '',
+	},
+	{
+		displayName: 'Order ID',
+		name: 'orderId',
+		type: 'number',
+		required: true,
+		displayOptions: { show: { resource: ['order'], operation: ['modifyOrder'] } },
+		default: 0,
+		description: 'The order ID to modify',
+	},
+	{
+		displayName: 'Side',
+		name: 'side',
+		type: 'options',
+		required: true,
+		displayOptions: { show: { resource: ['order'], operation: ['modifyOrder'] } },
+		options: [
+			{ name: 'Buy', value: 'BUY' },
+			{ name: 'Sell', value: 'SELL' },
+		],
+		default: 'BUY',
+		description: 'Required by Binance for identification, not modifiable',
+	},
+	{
+		displayName: 'Quantity',
+		name: 'quantity',
+		type: 'number',
+		required: true,
+		displayOptions: { show: { resource: ['order'], operation: ['modifyOrder'] } },
+		typeOptions: { numberPrecision: 8 },
+		default: 0,
+		description: 'New order quantity',
+	},
+	{
+		displayName: 'Price',
+		name: 'price',
+		type: 'number',
+		required: true,
+		displayOptions: { show: { resource: ['order'], operation: ['modifyOrder'] } },
+		typeOptions: { numberPrecision: 8 },
+		default: 0,
+		description: 'New order price',
+	},
+];
