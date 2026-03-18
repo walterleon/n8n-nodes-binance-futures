@@ -1,0 +1,10 @@
+{
+  "node": "n8n-nodes-binance-futures.binanceFutures",
+  "nodeVersion": "1.0",
+  "codexVersion": "1.0",
+  "categories": ["Finance & Payments"],
+  "resources": {
+    "credentialDocumentation": [],
+    "primaryDocumentation": []
+  }
+}
