@@ -1,0 +1,58 @@
+import { INodeProperties } from 'n8n-workflow';
+
+export const getIncomeHistoryProperties: INodeProperties[] = [
+  {
+    displayName: 'Symbol Name or ID',
+    name: 'symbol',
+    type: 'options',
+    description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code-examples/expressions/">expression</a>. Leave empty to get income for all symbols.',
+    displayOptions: { show: { resource: ['account'], operation: ['getIncomeHistory'] } },
+    typeOptions: { loadOptionsMethod: 'getSymbols' },
+    options: [],
+    default: '',
+  },
+  {
+    displayName: 'Income Type',
+    name: 'incomeType',
+    type: 'options',
+    displayOptions: { show: { resource: ['account'], operation: ['getIncomeHistory'] } },
+    options: [
+      { name: 'All', value: '' },
+      { name: 'Realized PnL', value: 'REALIZED_PNL' },
+      { name: 'Funding Fee', value: 'FUNDING_FEE' },
+      { name: 'Commission', value: 'COMMISSION' },
+      { name: 'Transfer', value: 'TRANSFER' },
+      { name: 'Insurance Clear', value: 'INSURANCE_CLEAR' },
+      { name: 'Welcome Bonus', value: 'WELCOME_BONUS' },
+      { name: 'Internal Transfer', value: 'INTERNAL_TRANSFER' },
+      { name: 'Delivered Settlement', value: 'DELIVERED_SETTLEMENT' },
+    ],
+    default: '',
+    description: 'Filter income by type',
+  },
+  {
+    displayName: 'Limit',
+    name: 'limit',
+    type: 'number',
+    displayOptions: { show: { resource: ['account'], operation: ['getIncomeHistory'] } },
+    typeOptions: { minValue: 1, maxValue: 1000 },
+    default: 100,
+    description: 'Number of income records to return (max 1000)',
+  },
+  {
+    displayName: 'Start Time',
+    name: 'startTime',
+    type: 'dateTime',
+    displayOptions: { show: { resource: ['account'], operation: ['getIncomeHistory'] } },
+    default: '',
+    description: 'Start time for income history',
+  },
+  {
+    displayName: 'End Time',
+    name: 'endTime',
+    type: 'dateTime',
+    displayOptions: { show: { resource: ['account'], operation: ['getIncomeHistory'] } },
+    default: '',
+    description: 'End time for income history',
+  },
+];
